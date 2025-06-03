@@ -1,0 +1,41 @@
+name: 自动更新
+on:
+ workflow_dispatch: null
+ schedule:
+  - cron: 0 16 * * *
+ push:
+  branches:
+  - main
+permissions:
+ contents: write
+jobs:
+ zdgx:
+  runs-on: ubuntu-latest
+  steps:
+   - name: 检出仓库代码
+     uses: actions/checkout@v4
+   - name: 设置 Node.js 环境
+     uses: actions/setup-node@v3
+     with:
+      node-version: "18"
+   - name: 安装 Node.js 和依赖
+     run: npm install -g javascript-obfuscator
+   - name: 下载原文件
+     run: curl -sSL -o sourcefile.js
+      https://raw.githubusercontent.com/cmliu/CF-Workers-SUB/refs/heads/main/_worker.js
+   - name: 混淆文件
+     run: |
+      javascript-obfuscator sourcefile.js --output _worker.js \
+      --compact true \
+      --identifier-names-generator hexadecimal \
+      --rename-globals true \
+      --string-array true \
+      --transform-object-keys true \
+      --unicode-escape-sequence true
+   - name: 提交
+     run: |
+      git config --global user.name "github-actions[bot]"
+      git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      git add _worker.js
+      git commit --allow-empty-message -m ""
+      git push
